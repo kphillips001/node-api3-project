@@ -1,54 +1,128 @@
 const express = require('express');
 
+const Users = require('./userDb.js');
+const Posts = require('../posts/postDb.js');
+
 const router = express.Router();
 
-const Users = require("./userDb.js");
-const Posts = require("../posts/postDb");
-
-router.post('/', (req, res) => {
+router.post('/', validateUser, (req, res) => {
   // do your magic!
-  userdb.insert(req.body)
-  .then(user => {
-    res.status(201).json(user);
-  })
-  .catch(err => {
-    console.log('Error', err);
-    res.status(500).json({ error: "There was an error creating a user." })
-  })
+  Users.insert(req.body)
+    .then(item => {
+      res.status(201).json(req.body);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        message: 'There was an error while saving the new user.',
+        error: err
+      });
+    });
 });
 
-router.post('/:id/posts', (req, res) => {
-  const postId = req.params.id
-  const postInfo = {...req.body, user_id, postId}
+router.post('/:id/posts', validateUserId, validatePost, (req, res) => {
   // do your magic!
-  posts.db.insert(postInfo)
-  .then(user => {
-    res.status(201).json(user);
-  })
-  .catch(err => {
-    console.log('Error', err);
-    res.status(500).json({ error: "There was an error creating a post." })
-  })
+  Posts.insert(req.body)
+    .then(item => {
+      res.status(201).json(req.body)
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        message: "There was an error while creating the new post.",
+        error: err
+      })
+    });
 });
 
 router.get('/', (req, res) => {
   // do your magic!
+  Users.get()
+    .then(item => {
+      res.status(200).json(item)
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        message: 'The user information could not be retrieved. ',
+        error: err
+      });
+    });
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', validateUserId, (req, res) => {
   // do your magic!
+  Users.getById(req.user.id)
+    .then(item => {
+      if (item) {
+        res.status(200).json(item);
+      } else {
+        res.status(404).json({
+          message: 'The user with the specified ID does not exist'
+        })
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        message: 'The user information could not be retrieved. ',
+        error: err
+      });
+    })
 });
 
-router.get('/:id/posts', (req, res) => {
+router.get('/:id/posts', validateUserId, (req, res) => {
   // do your magic!
+  const { id } = req.params;
+  console.log(id);
+  
+  Users.getUserPosts(id)
+    .then(item => {
+      if (item.length > 0) {
+        res.status(200).json(item);
+      } else {
+        res.status(404).json({
+          message: 'There are no posts for this user yet!'
+        })
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        message: 'The user information could not be retrieved. ',
+        error: err
+      });
+    })
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateUserId, (req, res) => {
   // do your magic!
+  Users.remove(req.user.id)
+    .then(removed => {
+      res.status(200).json(req.user);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        message: 'The user could not be deleted',
+        error: err
+      })
+    })
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validateUserId, validateUser, (req, res) => {
   // do your magic!
+  Users.update(req.user.id, req.body)
+    .then(item => {
+      res.status(200).json(req.body)
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        message: "The user could not be updated.",
+        error: err
+      })
+    })
 });
 
 //custom middleware
